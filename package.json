@@ -19,7 +19,9 @@
   ],
   "dependencies": {
     "nomnom": "*",
-    "html": "*"
+    "html": "*",
+    "lodash": "^2.4.1",
+    "inherits": "^2.0.1"
   },
   "devDependencies": {
     "mocha": "*",
