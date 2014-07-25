@@ -184,19 +184,21 @@ describe('InlineCompiler', function () {
     var c = new InlineCompiler({
       plugins: [
         function (walk, out) {
-          if (!walk.at("~Green[")) return false;
-          // Try to find the ]
-          walk.skip(7);
-          var start = walk.position;
-          var end = walk.indexOf("]");
-          if (end === null) {
-            this.out.push("~Green[");
-            return true;
-          }
-          // Collecting the text up to ] and matching further
-          var text = walk.yieldUntil(end);
+          if (!walk.at("~{")) return false;
+          walk.skip(2);
+          var startStyle = walk.position;
+          var endStyle = walk.indexOf("}");
+          if (endStyle === null) return false;
+          var style = walk.yieldUntil(endStyle);
           walk.skip();
-          out.push('<span class="co co-green">' + text + '</span>');
+          if (!walk.at("[")) return false;
+          walk.skip();
+          var startText = walk.position;
+          var endText = walk.indexOf("]");
+          if (endText === null) return false;
+          var text = walk.yieldUntil(endText);
+          walk.skip();
+          out.push('<span class="' + style.replace(/\./g, ' ').trim() + '">' + text + '</span>');
           return true;
         }
       ]
@@ -205,7 +207,23 @@ describe('InlineCompiler', function () {
     var d = new InlineCompiler();
 
     it("should work with a simple plugin", function () {
-      assert.equal(c.toHtml("~Green[foo] da bar bar"), '<span class="co co-green">foo</span> da bar bar');
+      assert.equal(c.toHtml("~{.co.co-green}[foo] da bar bar"), '<span class="co co-green">foo</span> da bar bar');
+    });
+
+    it("should work with a simple plugin #2", function () {
+      assert.equal(c.toHtml("~{.co.co-green}[foo da bar bar]"), '<span class="co co-green">foo da bar bar</span>');
+    });
+
+    it("should work with a simple plugin where the format is wrong #1", function () {
+      assert.equal(c.toHtml("~{.co.co-green[foo] da bar bar"), '~{.co.co-green[foo] da bar bar');
+    });
+
+    it("should work with a simple plugin where the format is wrong #2", function () {
+      assert.equal(c.toHtml("~{.co.co-green}foo] da bar bar"), '~{.co.co-green}foo] da bar bar');
+    });
+
+    it("should work with a simple plugin where the format is wrong #3", function () {
+      assert.equal(c.toHtml("~{.co.co-green}[foo da bar bar"), '~{.co.co-green}[foo da bar bar');
     });
 
     it('should emit generic chars as is', function () {
